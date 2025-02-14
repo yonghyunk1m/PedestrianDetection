@@ -27,3 +27,6 @@ python main.py train --config="configs/vggish_finetune_ASPED-b.yaml"
 ```bash
 python main.py test  --config="/path/to/your/config.yaml" --checkpoint_path="/path/to/your/checkpoint.ckpt"
 ```
+### Checkpoint List
+- trained w/ v.a: "work_dir/vggish_finetune_ASPED-a/epoch=17-loss=0.576.ckpt"
+- trained w/ v.b: "work_dir/vggish_finetune_ASPED-b/epoch=13-loss=0.584.ckpt"
