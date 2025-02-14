@@ -5,7 +5,7 @@ import torch.utils.data as Data
 import torch
 import pytorch_lightning as pl
 from tqdm import tqdm
-from .dataset import ASPEDv2Dataset, SR
+from .dataset import ASPEDDataset, SR
 from .transforms import VGGish, VGGish_PreProc
 
 DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -36,13 +36,13 @@ class AspedDataModule(pl.LightningDataModule):
     def get_splits(self):
         #Ensure portions of train segments are not leaked into test segments
 
-        max_idx = len(self.dataset) - ASPEDv2Dataset.segment_length
-        segment_idx = torch.arange(0, max_idx - 1, ASPEDv2Dataset.segment_length).int()
+        max_idx = len(self.dataset) - ASPEDDataset.segment_length
+        segment_idx = torch.arange(0, max_idx - 1, ASPEDDataset.segment_length).int()
         idx = segment_idx[torch.randperm(segment_idx.shape[0])]
 
         #idx = torch.randperm(len(self.dataset))
         num = idx.shape[0] // 10
-        if ASPEDv2Dataset.n_classes == 1 or ASPEDv2Dataset.n_classes > 2:
+        if ASPEDDataset.n_classes == 1 or ASPEDDataset.n_classes > 2:
             train_dataset = AugmentationDataset(self.dataset, idx[:8*num])
             train_dataset = Data.Subset(train_dataset, torch.arange(len(train_dataset)))
         else:
@@ -85,11 +85,10 @@ class AspedDataModule(pl.LightningDataModule):
         labels = []
         for dataset in concat_dataset.datasets:
             labels.append(dataset.labels)
-        labels = torch.ceil(ASPEDv2Dataset.threshold(torch.cat(labels, axis=0)[indices]))
+        labels = torch.ceil(ASPEDDataset.threshold(torch.cat(labels, axis=0)[indices]))
 
         data = []
         for x in tqdm(range(labels.shape[0] - self.dataset.datasets[0].segment_length)):
-            #data.append(torch.max(labels[x:x+self.dataset.datasets[0].segment_length].unsqueeze(dim=1), axis = 1)[0])
             data.append(torch.max(labels[x:x+self.dataset.datasets[0].segment_length].unsqueeze(dim=-1), axis=0)[0])
         data = torch.cat(data, dim=0)
 
@@ -120,7 +119,7 @@ class AugmentationDataset(Data.Dataset):
             self.sample_map = self.construct_sample_map()
 
         def __len__(self):
-            return self.new_samples.shape[0] - ASPEDv2Dataset.segment_length
+            return self.new_samples.shape[0] - ASPEDDataset.segment_length
         
         def construct_sample_map(self):
             return self.new_samples
@@ -137,21 +136,21 @@ class AugmentationDataset(Data.Dataset):
             '''
         
         def __getitem__(self, idx):
-            val = self.sample_map[idx:idx + ASPEDv2Dataset.segment_length]
+            val = self.sample_map[idx:idx + ASPEDDataset.segment_length]
             '''
             Pre-computed samples
 
             sample = list()
             labels = list()
-            ASPEDv2Dataset.do_transform = False
+            ASPEDDataset.do_transform = False
             for v in val:
                 X_1, y_1 = self.core_dataset[v[0]]
                 X_2, y_2 = self.core_dataset[v[1]]
                 sample.append((X_1[0,:] + X_2[0,:]).unsqueeze(dim=0))
                 labels.append((y_1[0] + y_2[0]).unsqueeze(dim=-1))
-            ASPEDv2Dataset.do_transform = True
-            max_val = ASPEDv2Dataset.n_classes - 1 if ASPEDv2Dataset.n_classes > 1 else 1.0
-            return ASPEDv2Dataset.transform(torch.cat(sample, axis=0), SR), torch.clamp(torch.cat(labels, axis=0), max=max_val)
+            ASPEDDataset.do_transform = True
+            max_val = ASPEDDataset.n_classes - 1 if ASPEDDataset.n_classes > 1 else 1.0
+            return ASPEDDataset.transform(torch.cat(sample, axis=0), SR), torch.clamp(torch.cat(labels, axis=0), max=max_val)
             '''
             
             '''
@@ -159,7 +158,7 @@ class AugmentationDataset(Data.Dataset):
             '''
             sample = list()
             labels = list()
-            ASPEDv2Dataset.do_transform = False
+            ASPEDDataset.do_transform = False
             for v in val:
                 v = int(v.item())
                 v_1 = torch.randint(int(v), (1,)).item()
@@ -173,16 +172,16 @@ class AugmentationDataset(Data.Dataset):
                 X_2, y_2 = self.core_dataset[v_2_idx]
                 sample.append((X_1[0,:] + X_2[0,:]).unsqueeze(dim=0))
                 labels.append((y_1[0] + y_2[0]).unsqueeze(dim=-1))
-            ASPEDv2Dataset.do_transform = True
-            max_val = ASPEDv2Dataset.n_classes - 1 if ASPEDv2Dataset.n_classes > 1 else 1.0
-            return ASPEDv2Dataset.transform(torch.cat(sample, axis=0), SR), torch.clamp(torch.cat(labels, axis=0), max=max_val)
+            ASPEDDataset.do_transform = True
+            max_val = ASPEDDataset.n_classes - 1 if ASPEDDataset.n_classes > 1 else 1.0
+            return ASPEDDataset.transform(torch.cat(sample, axis=0), SR), torch.clamp(torch.cat(labels, axis=0), max=max_val)
 
     def __init__(self, concat_dataset, indices=None, poisson_rate='uniform'):
         self.core_dataset = concat_dataset
         self.labels = [dataset.labels for dataset in concat_dataset.datasets]
         self.labels = torch.cat(self.labels, axis=0)
-        self.transform = ASPEDv2Dataset._transform
-        #ASPEDv2Dataset._transform = torch.nn.Identity()
+        self.transform = ASPEDDataset._transform
+        #ASPEDDataset._transform = torch.nn.Identity()
         #AspedDataModule._transform = VGGish_PreProc()
         if poisson_rate == 'mean':
             self.poisson_rate = torch.mean(self.labels[self.labels > 0])
@@ -196,8 +195,8 @@ class AugmentationDataset(Data.Dataset):
         self.indices = indices
         
         if not indices is None: #flatten for intermediate indices
-            x = torch.arange(ASPEDv2Dataset.segment_length).tile(indices.shape[0],).view(-1, ASPEDv2Dataset.segment_length)
-            z = indices.unsqueeze(dim=1).tile(1, ASPEDv2Dataset.segment_length)
+            x = torch.arange(ASPEDDataset.segment_length).tile(indices.shape[0],).view(-1, ASPEDDataset.segment_length)
+            z = indices.unsqueeze(dim=1).tile(1, ASPEDDataset.segment_length)
             self.flat_indices = (x + z).flatten()
         else:
             self.flat_indices = torch.arange(self.labels.shape[0])
@@ -224,7 +223,7 @@ class AugmentationDataset(Data.Dataset):
             num_to_sample = int(num_to_sample * (1 + self.poisson(0)) // 1)
 
             new_samples = torch.ones(num_to_sample) * self.poisson_rate
-            max_val = ASPEDv2Dataset.max_val if ASPEDv2Dataset.n_classes == 1 else ASPEDv2Dataset.n_classes - 1
+            max_val = ASPEDDataset.max_val if ASPEDDataset.n_classes == 1 else ASPEDDataset.n_classes - 1
             new_samples = torch.clamp(torch.poisson(new_samples), max=max_val)
             new_samples = new_samples[new_samples > 0]
         else:
@@ -248,9 +247,9 @@ if __name__ == '__main__':
 
     TEST_DIR = ["/media/fast_drive/audio_data/Test_7262023", "/media/fast_drive/audio_data/Test_08092023", 
                 "/media/fast_drive/audio_data/Test_10242023", "/media/fast_drive/audio_data/Test_11072023"]
-    X = ASPEDv2Dataset.from_dirs(TEST_DIR, segment_length=10, transform='vggish-mel')
-    vggish = VGGish(pproc=False).to(ASPEDv2Dataset.device)
-    print(ASPEDv2Dataset.device)
+    X = ASPEDDataset.from_dirs(TEST_DIR, segment_length=10, transform='vggish-mel')
+    vggish = VGGish(pproc=False).to(ASPEDDataset.device)
+    print(ASPEDDataset.device)
 
     datamod = AspedDataModule(X, batch_size=512)
     dataloader = datamod.train_dataloader()

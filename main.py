@@ -16,7 +16,7 @@ DESCRIPTION
 - ModelCheckpoint: A callback that saves the model based on specific criteria during training.
 '''
 
-from models.data_utils.dataset import ASPEDDatset, SR
+from models.data_utils.dataset import ASPEDDataset, SR
 from models.data_utils.datamodule import AspedDataModule
 from models import ALL_MODELS # A dictionary that holds different model architectures, allowing dynamic model loading.
 import wandb
@@ -42,7 +42,7 @@ def train(config="/home/yding/aspad-models/configs/vggish_finetune_yonghyun_FEB1
     
     # Initialize DataModule and Model
     # PAVAN Load dataset
-    X = ASPEDDatset.from_dirs_v1(TEST_DIR, **config['data_params'])
+    X = ASPEDDataset.from_dirs_v1(TEST_DIR, **config['data_params'])
     datamodule = AspedDataModule(X, **config['dataloader_params']) # PyTorch Lightning의 DataModule; train/val/test_dataloader()제대로 설정해야함
 
     model = ALL_MODELS[model_cfg.pop("type", "base")](exp=config["exp"], **model_cfg) # Dynamically selects a model from the ALL_MODELS dictionary based on the "type" field from model_cfg.
@@ -98,7 +98,7 @@ def test(config="/media/backup_SSD/PedestrianDetection/configs/vggish_finetune_A
     print(f"TEST_DIR: {TEST_DIR}")
 
     # Initialize DataModule
-    X = ASPEDDatset.from_dirs_v1(TEST_DIR, **config['data_params'])
+    X = ASPEDDataset.from_dirs_v1(TEST_DIR, **config['data_params'])
     datamodule = AspedDataModule(X, **config['dataloader_params'])
 
     # Initialize the model
@@ -111,8 +111,8 @@ def test(config="/media/backup_SSD/PedestrianDetection/configs/vggish_finetune_A
     eval_dict = dict()
     params = copy.deepcopy(config)  # Save the original configuration for reference
     for tt in [1, 2, 3, 4]:
-        ASPEDDatset.min_val = tt  # Update min_val for this iteration
-        print(f"Testing with ASPEDDatset.min_val = {tt}")
+        ASPEDDataset.min_val = tt  # Update min_val for this iteration
+        print(f"Testing with ASPEDDataset.min_val = {tt}")
 
         # Run the testing phase
         m = trainer.test(model, datamodule=datamodule, ckpt_path=checkpoint_path)
@@ -134,3 +134,16 @@ if __name__ == "__main__":
     # fire: A library that converts Python functions into command-line interfaces (CLIs).
     import fire 
     fire.Fire({"train": train, "test": test})
+
+'''
+HOW TO TRAIN / TEST?
+
+[TRAIN]
+python main.py train --config="/path/to/your/config.yaml"
+
+[TEST]
+python main.py test  --config="/path/to/your/config.yaml" --checkpoint_path="/path/to/your/checkpoint.ckpt"
+(Example)
+python main.py test --config="/media/backup_SSD/PedestrianDetection/configs/vggish_finetune_ASPED-b.yaml"\
+    --checkpoint_path="/media/backup_SSD/PedestrianDetection/work_dir/vggish_finetune_ASPED-b/epoch=13-loss=0.584.ckpt"
+'''

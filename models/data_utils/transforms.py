@@ -131,7 +131,7 @@ class VGGish_PreProc(torch.nn.Module):
 
         # Convert to mel-scale
         mel = self.mel_scale(spec) + 1e-10 #log offset
-
+        #mel = mel.squeeze(1)  # Removes the singleton channel dimension if it's there
         logmel = torch.log(mel.permute(0, 2, 1)[:, :NUM_FRAMES, :]).unsqueeze(dim=1)
 
         if self.do_normalize:

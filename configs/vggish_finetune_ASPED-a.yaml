@@ -15,9 +15,6 @@ data_params:
   data_path: ["/media/chan/backup_SSD2/ASPED_v1_npy/Session_5242023", "/media/chan/backup_SSD2/ASPED_v1_npy/Session_6012023", 
                 "/media/chan/backup_SSD2/ASPED_v1_npy/Session_6072023", "/media/chan/backup_SSD2/ASPED_v1_npy/Session_6212023",
                 "/media/chan/backup_SSD2/ASPED_v1_npy/Session_6282023"] #Change to your paths to each session
-  radius: 6
-  segment_length: 10
-  transform: "vggish-mel"
 
 dataloader_params:
   batch_size: 256

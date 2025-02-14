@@ -14,8 +14,6 @@ model_params:
 data_params:
   data_path: ["/media/backup_SSD/ASPED_v2_npy/Session_07262023", "/media/backup_SSD/ASPED_v2_npy/Session_08092023", 
                 "/media/backup_SSD/ASPED_v2_npy/Session_11072023", "/media/backup_SSD/ASPED_v2_npy/Session_11282023"] 
-  radius: 6
-  segment_length: 10
   transform: "vggish-mel"
 
 dataloader_params:
@@ -29,13 +27,20 @@ trainer_params:
 
 logging_params:
   save_dir: "logger_runs/logs_test/"
-  name: "vggish"
+  name: "vggish-mel"
   manifest_path: "logger_runs/manifest_test"
   wandb_project: "urban_yiwei"
   
+data:
+    segment_length: 10
+    hop_length: 1 # he segments overlap with a 1-second hop (stride) between them.
+
+  # These could refer to settings for event detection boundaries or thresholds, for pedestrain detection.
+    detection_boundry: 6 # 6 meter radius
+    threshold: 1 # 1 pedestrain(s)
+
 # Model Configurations
 model:
-
   ## Feature Extractio+n Settings
   feature:
     name: mel # The feature extraction method is mel spectrograms.

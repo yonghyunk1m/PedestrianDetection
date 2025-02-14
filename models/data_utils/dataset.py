@@ -30,26 +30,26 @@ class ASPEDDataset(Dataset):
 
     @classmethod
     def transform(cls, *args) -> torch.Tensor:
-        if type(ASPEDDatset._transform) == torch.nn.Identity:
-            return ASPEDDatset._transform(args[0])
+        if type(ASPEDDataset._transform) == torch.nn.Identity:
+            return ASPEDDataset._transform(args[0])
         else:
-            return ASPEDDatset._transform(*args)
+            return ASPEDDataset._transform(*args)
     
     @classmethod
     def threshold(cls, X: torch.Tensor) -> torch.Tensor:
-        if ASPEDDatset.n_classes == 1:
+        if ASPEDDataset.n_classes == 1:
             return torch.clamp(X / 6, max=1.0) #normalize values for regression
         else: #Constrain class labels to [0, n_classes - 1], where all values < min_val are set to 0
-            return torch.clamp(X // ASPEDDatset.min_val, max=ASPEDDatset.n_classes - 1) 
+            return torch.clamp(X // ASPEDDataset.min_val, max=ASPEDDataset.n_classes - 1) 
         
-    def __init__(self, rec_path, labels, segment_length = 1, n_classes = 2):
+    def __init__(self, rec_path, labels, segment_length = 10, n_classes = 2):
         #Instance vars
         self.rec_path = rec_path
         self.labels = labels
 
         #Class Vars
-        ASPEDDatset.segment_length = segment_length
-        ASPEDDatset.n_classes = n_classes #1 sets model to regression mode
+        ASPEDDataset.segment_length = segment_length
+        ASPEDDataset.n_classes = n_classes #1 sets model to regression mode
          
         # Load data into a NumPy memory-mapped array
         self.data, self.indices = self._load_data()
@@ -80,10 +80,10 @@ class ASPEDDataset(Dataset):
 
         labels = self.labels[idx:idx+self.segment_length]
 
-        if not ASPEDDatset.do_transform:
-            return item.view(self.segment_length, SR), ASPEDDatset.threshold(labels)
+        if not ASPEDDataset.do_transform:
+            return item.view(self.segment_length, SR), ASPEDDataset.threshold(labels)
 
-        return ASPEDDatset.transform(item.view(self.segment_length, SR), SR), ASPEDDatset.threshold(labels)
+        return ASPEDDataset.transform(item.view(self.segment_length, SR), SR), ASPEDDataset.threshold(labels)
     
     def _zeropad(self, X, num):
         if len(X) >= num:
@@ -107,13 +107,13 @@ class ASPEDDataset(Dataset):
                   transform :Literal['vggish', 'vggish-mel', 'ast', None] = None, n_classes= 2) -> ConcatDataset:
         
         if transform == 'vggish':
-            ASPEDDatset._transform = VGGish()
+            ASPEDDataset._transform = VGGish()
         elif transform == 'vggish-mel':
-            ASPEDDatset._transform = VGGish_PreProc()
+            ASPEDDataset._transform = VGGish_PreProc()
         elif transform == 'ast':
-            ASPEDDatset._transform = torch.nn.Identity()
+            ASPEDDataset._transform = torch.nn.Identity()
         
-        ASPEDDatset.n_classes = n_classes
+        ASPEDDataset.n_classes = n_classes
 
         dataset = []
         
@@ -133,16 +133,16 @@ class ASPEDDataset(Dataset):
                     label = torch.Tensor(labels[LABEL_HEADER.format(i, radius)].values)
                     views = torch.Tensor(labels[VIEW_PREFIX+LABEL_HEADER.format(i, radius)].values)
                     label[views == 1] = IGNORE_INDEX
-                    ASPEDDatset.max_val = max(label.max().item(), ASPEDDatset.max_val)
-                    dataset.append(ASPEDDatset(working_dir, label, segment_length=segment_length, n_classes=n_classes))
+                    ASPEDDataset.max_val = max(label.max().item(), ASPEDDataset.max_val)
+                    dataset.append(ASPEDDataset(working_dir, label, segment_length=segment_length, n_classes=n_classes))
         
         return ConcatDataset(dataset)
     
     @staticmethod
-    def from_dirs_v1(dirs: list[str], radius: Literal[1,3,6,9] = 6, segment_length = 1,
+    def from_dirs_v1(dirs: list[str], radius: Literal[1,3,6,9] = 6, segment_length = 10,
                   transform :Literal['vggish', 'vggish-mel', 'ast', None] = None, n_classes= 2) -> ConcatDataset:
         
-        ASPEDDatset.n_classes = n_classes
+        ASPEDDataset.n_classes = n_classes
         dataset = []
         
         print(f"dirs: {dirs}")
@@ -161,20 +161,20 @@ class ASPEDDataset(Dataset):
                 
                 for i, rec in enumerate(sorted(os.listdir(audio_path))):
                     label = torch.Tensor(labels[LABEL_HEADER.format(i + 1, radius)].values)
-                    ASPEDDatset.max_val = max(label.max().item(), ASPEDDatset.max_val)
+                    ASPEDDataset.max_val = max(label.max().item(), ASPEDDataset.max_val)
                     working_dir = os.path.join(audio_path, rec)
-                    dataset.append(ASPEDDatset(working_dir, label, segment_length=segment_length, n_classes=n_classes))
+                    dataset.append(ASPEDDataset(working_dir, label, segment_length=segment_length, n_classes=n_classes))
                     
         c_dataset = ConcatDataset(dataset)
 
         if transform == 'vggish':
-            ASPEDDatset._transform = VGGish()
+            ASPEDDataset._transform = VGGish()
         elif transform == 'vggish-mel':
-            ASPEDDatset._transform = VGGish_PreProc()
+            ASPEDDataset._transform = VGGish_PreProc()
         elif transform == 'ast':
-            ASPEDDatset._transform = AST_PreProc()
+            ASPEDDataset._transform = AST_PreProc()
         else:
-            ASPEDDatset._transform = torch.nn.Identity()
+            ASPEDDataset._transform = torch.nn.Identity()
         return c_dataset
 
 if __name__ == '__main__':
@@ -185,7 +185,8 @@ if __name__ == '__main__':
     TEST_DIR = ["/media/chan/backup_SSD2/ASPED_v1_npy/Session_5242023", "/media/chan/backup_SSD2/ASPED_v1_npy/Session_6012023", 
                 "/media/chan/backup_SSD2/ASPED_v1_npy/Session_6072023", "/media/chan/backup_SSD2/ASPED_v1_npy/Session_6212023",
                 "/media/chan/backup_SSD2/ASPED_v1_npy/Session_6282023"]
-    X = ASPEDDatset.from_dirs_v1(TEST_DIR, segment_length=9, transform='vggish-mel')
+    
+    X = ASPEDDataset.from_dirs_v1(TEST_DIR, segment_length=10, transform='vggish-mel')
     print(type(X), len(X))
 
     lim = 100
