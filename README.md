@@ -11,6 +11,9 @@ conda activate my_env_name
 sh download_dependencies.sh
 ```
 ## Download Dataset
+### Original Dataset (Audio - FLAC)
+Download via [**here**](https://urbanaudiosensing.github.io/ASPED.html)
+### Processed Dataset (Audio - NPY)
 
 ## How to train
 Ensure the dataset paths in the YAML files are well-mapped!
