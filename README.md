@@ -1,7 +1,7 @@
 # PedestrianDetection
 Urban Audio Sensing Project @ Georgia Tech (Fall2024-Spring2025)
-[**[Paper]**](https://arxiv.org/abs/2309.06531){:target="_blank"}
-[**[Website]**](https://urbanaudiosensing.github.io/){:target="_blank"}
+[**[Paper]**](https://arxiv.org/abs/2309.06531)
+[**[Website]**](https://urbanaudiosensing.github.io/)
 
 ## How to train
 ```bash
