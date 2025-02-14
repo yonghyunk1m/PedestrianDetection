@@ -10,9 +10,17 @@ conda create -y -n my_env_name python=3.9.18
 conda activate my_env_name
 sh download_dependencies.sh
 ```
+## Download Dataset
+
 ## How to train
+Ensure the dataset paths in the YAML files are well-mapped!
+### Train w/ ASPED v.a
 ```bash
-python main.py train --config="/path/to/your/config.yaml"
+python main.py train --config="configs/vggish_finetune_ASPED-a.yaml"
+```
+### Train w/ ASPED v.b
+```bash
+python main.py train --config="configs/vggish_finetune_ASPED-b.yaml"
 ```
 
 ## How to test
