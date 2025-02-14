@@ -3,10 +3,10 @@ Urban Audio Sensing Project @ Georgia Tech (Fall2024-Spring2025)
 [**[Paper]**](https://arxiv.org/abs/2309.06531)
 [**[Website]**](https://urbanaudiosensing.github.io/)
 
-## Set Up Environment
+## Environment Setup
 After cloning the repository, change the working directory to this repository by using the `cd` command and then enter the below Linux command on your terminal.
 ```bash
-conda env create -f environment.yml -n your_env_name
+sh prerequisites.sh
 ```
 ## How to train
 ```bash
