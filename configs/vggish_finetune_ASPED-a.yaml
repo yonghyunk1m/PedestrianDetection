@@ -15,6 +15,7 @@ data_params:
   data_path: ["/media/chan/backup_SSD2/ASPED_v1_npy/Session_5242023", "/media/chan/backup_SSD2/ASPED_v1_npy/Session_6012023", 
                 "/media/chan/backup_SSD2/ASPED_v1_npy/Session_6072023", "/media/chan/backup_SSD2/ASPED_v1_npy/Session_6212023",
                 "/media/chan/backup_SSD2/ASPED_v1_npy/Session_6282023"] #Change to your paths to each session
+  transform: "vggish-mel"
 
 dataloader_params:
   batch_size: 256
@@ -31,6 +32,14 @@ logging_params:
   manifest_path: "logger_runs/manifest_test"
   wandb_project: "urban_pavan"
   
+data:
+    segment_length: 10
+    hop_length: 1 # he segments overlap with a 1-second hop (stride) between them.
+
+  # These could refer to settings for event detection boundaries or thresholds, for pedestrain detection.
+    detection_boundry: 6 # 6 meter radius
+    threshold: 1 # 1 pedestrain(s)
+
 # Model Configurations
 model:
   ## Feature Extractio+n Settings
