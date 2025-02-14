@@ -6,7 +6,7 @@ Urban Audio Sensing Project @ Georgia Tech (Fall2024-Spring2025)
 ## Environment Setup
 After cloning the repository, change the working directory to this repository by using the `cd` command and then enter the below Linux command on your terminal.
 ```bash
-conda create -n my_env_name python=3.9.18
+conda create -y -n my_env_name python=3.9.18
 conda activate my_env_name
 sh download_dependencies.sh
 ```
