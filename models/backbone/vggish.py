@@ -4,9 +4,9 @@ VGGish
 Adapted from https://github.com/harritaylor/torchvggish/tree/master
 """
 '''
-이 코드는 VGGish 모델을 기반으로 한 오디오 임베딩 모델을 구현한다.
-여기서 VGGish 모델을 다양한 변형으로 구현하여 오디오 데이터를 입력으로 받아 특징을 추출하고,
-이를 바탕으로 시간적 관계를 학습할 수 있도록 설계한다.
+This code implements an audio embedding model based on the VGGish model.
+Here, the VGGish model is implemented in various variations to take audio data as input,
+extract features, and learn temporal relationships.
 '''
 from collections import OrderedDict
 
@@ -18,7 +18,7 @@ VGGISH_WEIGHTS = "https://github.com/harritaylor/torchvggish/" \
                  "releases/download/v0.1/vggish-10086976.pth"
 
 
-# VGG네트워크의 기본 구조를 정의하며, features 네트워크르 모듈을 사용하여 특징을 추출한다.
+# Defines the basic structure of the VGG network, where the 'features' module extracts features.
 class VGG(nn.Module):
     def __init__(self, features):
         super(VGG, self).__init__()
@@ -38,14 +38,12 @@ class VGG(nn.Module):
         # # remain compatible with vggish embeddings
         # x = torch.transpose(x, 1, 3)
         # x = torch.transpose(x, 1, 2)
-
         # x = x.contiguous()
         # x = x.view(x.size(0), -1)
-
         # x = self.embeddings(x)
         return x
 
-# 표준 VGG 구조를 만든다. 각 레이어는 Convolution 레이어와 ReLU 활성화 함수, 그리고 Max Pooling 레이어로 구성된다.
+# Constructs a standard VGG structure. Each layer consists of a convolutional layer, ReLU activation function, and max pooling layer.
 def make_layers():
     layers = []
     in_channels = 1
@@ -58,7 +56,7 @@ def make_layers():
             in_channels = v
     return nn.Sequential(*layers)
 
-# per_second 플래그가 참일때 사용된다; 일부 Max Pooling 레이어에서 (2, 5) 크기를 사용하여 시간 축에서 다운샘플링을 조정한다.
+# Used when the per_second flag is true; adjusts downsampling along the time axis by using (2, 5) max pooling sizes in some layers.
 def make_layer_1s():
     layers = []
     in_channels = 1
@@ -73,23 +71,22 @@ def make_layer_1s():
             in_channels = v
     return nn.Sequential(*layers)
 
-# 사전학습된 VGGish 모델을 사용하는 클래스이다!
+# A class that uses a pre-trained VGGish model.
 class VGGish(nn.Module):
     def __init__(self, pretrained=True, freeze=False, per_second=False) -> None:
         super().__init__()
         
         self.output_channel = 512
         self.model = VGG(make_layers()) if not per_second else VGG(make_layer_1s())
-        if pretrained: # pretrained가 참이면 load_pretrained_model 메서드를 통해 가중치를 로드한다.
+        if pretrained: # If pretrained is true, loads weights via load_pretrained_model method.
             self.load_pretrained_model()
         if freeze:
             for param in self.parameters():
                 param.requires_grad = False
     
-    def forward(self, x): # 입력 데이터를 Convolution 레이어를 거친 후, 시간 축에서 평균을 취해 최종 출력 (N, C, T 형태)을 반환한다.
+    def forward(self, x): # Passes input data through convolutional layers, then takes the mean along the time axis and returns the final output in (N, C, T) shape.
         x = x.unsqueeze(dim=1)  # N, 1, F, T
         x = self.model(x)
-        #print(f"x.shape: {x.shape}")
         x = torch.mean(x, dim=2)  # N, C, T
         return x
 
@@ -103,7 +100,7 @@ class VGGish(nn.Module):
 
         self.model.load_state_dict(new_state_dict)
 
-# VGGish를 상속받아 Skip Connection을 추가하여 다중 레벨 특징을 사용한다.
+# Inherits from VGGish and adds skip connections to utilize multi-level features.
 class VggishLayers(VGGish):
     def __init__(self, pretrained=True, freeze=False, per_second=False) -> None:
         super().__init__(pretrained, freeze, per_second)
@@ -135,25 +132,17 @@ class VggishLayers(VGGish):
         self.skip_connections = nn.ModuleList([
             self.output_1, self.output_2, self.output_3, self.output_4])
 
-    # forward 메서드: 입력 데이터를 self.model.features의 각 레이어를 순차적으로 통과하면서, MaxPool2d 레이어에서 skip_connections을 사용해 각 단계의 특징을 추출한다.
-    # 이 특징들은 시간 축에서 평균이 취해지고, 마지막에 모두 더해져 최종 출력이 된다.
+    # forward method: Sequentially passes input data through each layer in self.model.features, extracts features at each MaxPool2d layer using skip_connections.
+    # These features are averaged along the time axis and summed at the end to obtain the final output.
     def forward(self, x):
         outputs = []
         x = x.unsqueeze(dim=1)  # N, 1, F, T
         output_idx = 0
-        #print(f"x.shape: {x.shape}")
         for layer in self.model.features:
             x = layer(x)
-            #print(f"x.shape: {x.shape}")
             if isinstance(layer, nn.MaxPool2d):
-                #breakpoint()
                 outputs.append(self.skip_connections[output_idx](x).mean(dim=-1))
                 output_idx += 1
-        # breakpoint()
-        # print(f"len(outputs): {len(outputs)}") # 4
-        # print(f"outputs[0].shape: {outputs[0].shape}") # torch.Size([4, 512, 1])
-        # print(f"sum(outputs).shape: {sum(outputs).shape}")
-        # print(f"sum(outputs[0][0][]): {sum(outputs[0][0])}")
         return sum(outputs)
 
 
