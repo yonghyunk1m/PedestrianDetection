@@ -14,7 +14,7 @@ sh download_dependencies.sh
 ### Original Dataset (Audio - FLAC)
 Download via [**here**](https://urbanaudiosensing.github.io/ASPED.html)
 ### Processed Dataset (Audio - NPY)
-Utilize `utilities/flac_to_npy.py`
+- Based on the Original Dataset, leverage `utilities/flac_to_npy.py`
 
 ## How to train
 Ensure the dataset paths in the YAML files are well-mapped!
