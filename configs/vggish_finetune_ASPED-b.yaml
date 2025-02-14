@@ -1,0 +1,101 @@
+seed: 44224242 # Sets the random seed to ensure reproducibility
+exp: seq2seq
+
+model_params:
+  h_dim: 128
+  lr: 0.0005
+  nhead: 4
+  token_dim: 128
+  dropout: 0.2
+  nEncoders: 1
+  encoder: "vggish"
+  n_classes: 2
+
+data_params:
+  data_path: ["/media/backup_SSD/ASPED_v2_npy/Session_07262023", "/media/backup_SSD/ASPED_v2_npy/Session_08092023", 
+                "/media/backup_SSD/ASPED_v2_npy/Session_11072023", "/media/backup_SSD/ASPED_v2_npy/Session_11282023"] 
+  radius: 6
+  segment_length: 10
+  transform: "vggish-mel"
+
+dataloader_params:
+  batch_size: 256
+  num_workers: 6
+
+trainer_params:
+  max_epochs: 20
+  accelerator: "gpu"
+  devices: 1
+
+logging_params:
+  save_dir: "logger_runs/logs_test/"
+  name: "vggish"
+  manifest_path: "logger_runs/manifest_test"
+  wandb_project: "urban_yiwei"
+  
+# Model Configurations
+model:
+
+  ## Feature Extractio+n Settings
+  feature:
+    name: mel # The feature extraction method is mel spectrograms.
+    args:
+      sample_rate: 16000 # The audio data is sampled at 16 kHz.
+      n_fft: 512 # Size of the FFT window.
+      win_length: 512 # Window length in samples.
+      hop_length: 160 # The number of samples between successive frames (10 ms for 16 kHz audio).
+      
+      f_min: 0 # Frequency range of the mel spectrogram: (0 ~ 8 kHz)
+      f_max: 8000
+      n_mels: 64 # Number of mel filterbanks.
+
+      # Normalization parameters for the input features: Standard Normal Distribution
+      norm_mean: 0.0
+      norm_std: 1.0
+
+  ## Backbone Model Settings
+  backbone:
+    name: vggish # The backbone model is VGGish, a model trained for "audio feature extraction.""
+    args:
+      pretrained: true # Uses a pretrained version of VGGish.
+      freeze: true # Freezes the backbone layers to avoid updating them during training (fine-tuning only later layers).
+      per_second: true # vggish.py
+
+  optim:
+    type: Adam # Use Adam optimizer
+    args:
+      lr: 0.0005 # 5e-4; Learning rate (ASPED Thesis)
+      weight_decay: 0.0 # Optional: Regularization
+      eps: 0.00000001 # 1e-8; Epsilon for numerical stability
+
+# Trainer Configurations
+trainer:
+  ## Trainer Arguments
+  args:
+    max_epochs: 20 # (ASPED Thesis) No specific epoch limit; training will stop based on steps or other conditions.
+    #max_steps: 400000 # Training will stop after 40,000 steps. --> 400K
+    
+    # limit_train_batches: 2000 # Limits the number of training batches per epoch to 2000.
+    # limit_val_batches: 400 # Limits the number of validation batches to 400.
+
+    accelerator: gpu # Uses GPU for training.
+    devices: [0] # Specifies which GPU to use (in this case, GPU 0).
+    deterministic: true # Ensures reproducible results.
+
+    check_val_every_n_epoch: 1 # Runs validation after every epoch
+    log_every_n_steps: 20 # Logs metrics every 20 steps.
+
+  ## Logger Settings
+  logger:
+    save_dir: &save_dir work_dir/vggish_finetune_ASPED-b # The directory where logs will be saved.
+    name: log # Name of the logger
+
+  ## Checkpoint Settings
+  checkpoint:
+    dirpath: *save_dir # Uses the save_dir defined earlier for storing checkpoints.
+    filename: epoch={epoch}-loss={val/loss/total:.3f} # The checkpoint filename format, which includes the epoch number and validation loss.
+    auto_insert_metric_name: false # Disables automatic insertion of metric names in filenames.
+
+    monitor: val/loss/total # Monitors the validation loss to determine when to save checkpoints.
+    mode: min # Saves the checkpoint when the monitored metric (validation loss) is minimized.
+    every_n_epochs: 1 # Saves a checkpoint after every epoch.
