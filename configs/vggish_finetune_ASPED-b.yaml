@@ -12,8 +12,9 @@ model_params:
   n_classes: 2
 
 data_params:
-  data_path: ["/media/backup_SSD/ASPED_v2_npy/Session_07262023", "/media/backup_SSD/ASPED_v2_npy/Session_08092023", 
-                "/media/backup_SSD/ASPED_v2_npy/Session_11072023", "/media/backup_SSD/ASPED_v2_npy/Session_11282023"] 
+  data_path: ["/media/backup_SSD/ASPED_v2_npy/Session_07262023"] # For Debugging (System Mem 33.9G --> 109G)
+  # data_path: ["/media/backup_SSD/ASPED_v2_npy/Session_07262023", "/media/backup_SSD/ASPED_v2_npy/Session_08092023", 
+  #               "/media/backup_SSD/ASPED_v2_npy/Session_11072023", "/media/backup_SSD/ASPED_v2_npy/Session_11282023"] 
   transform: "vggish-mel"
 
 dataloader_params:

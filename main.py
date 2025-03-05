@@ -114,7 +114,18 @@ def test(config="/media/backup_SSD/PedestrianDetection/configs/vggish_finetune_A
         ASPEDDataset.min_val = tt  # Update min_val for this iteration
         print(f"Testing with ASPEDDataset.min_val = {tt}")
 
+        # YONGHYUN
+        # 🚨 테스트 시 bus frame이 포함된 데이터 건너뛰기
+        valid_samples = []
+        for idx in range(len(X)):
+            batch = X[idx]
+            if batch is None:
+                continue  # bus frame이 포함된 경우 건너뛰기
+            valid_samples.append(batch)
+            
         # Run the testing phase
+        print(f"Run the testing phase")
+        datamodule = AspedDataModule(valid_samples, **config['dataloader_params'])
         m = trainer.test(model, datamodule=datamodule, ckpt_path=checkpoint_path)
         eval_dict[str(tt)] = m[0]  # Assuming m is a list of metrics dictionaries
 
