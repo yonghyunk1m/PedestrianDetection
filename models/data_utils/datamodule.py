@@ -19,8 +19,6 @@ class AspedDataModule(pl.LightningDataModule):
         super().__init__()
 
         self.dataset = dataset
-
-
         self.batch_size = batch_size
         self.num_workers = num_workers
 
