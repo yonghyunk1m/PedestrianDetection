@@ -139,10 +139,8 @@ class ASPEDDataset(Dataset):
     def _load_data(self, valid_segments):
         """
         특정 segment에 해당하는 오디오 데이터만 로드하는 함수.
-
         Args:
             valid_segments (list[list[int]]): 선택된 segment의 시작 및 끝 프레임 리스트.
-
         Returns:
             tuple: (오디오 데이터 리스트, 프레임 인덱스 리스트)
         """
@@ -189,7 +187,7 @@ class ASPEDDataset(Dataset):
 
         # ✅ 각 파일에 대해 유효한 valid_segments를 저장
         for file_path in file_list:
-            print(f"file_path: {file_path}")
+            # print(f"file_path: {file_path}")
             try:
                 audio_data = np.load(file_path, mmap_mode='r', allow_pickle=True)
                 if isinstance(audio_data, tuple):
@@ -207,41 +205,53 @@ class ASPEDDataset(Dataset):
                 # ✅ 현재 파일과 관련된 segment만 필터링
                 file_valid_segments = []
                 for segment in valid_segments:
-                    print(f"segment: {segment}")
+                    # print(f"segment: {segment}")
                     seg_start = segment[0] * SR
                     seg_end = (segment[-1]+1) * SR
 
                     # 🔹 현재 파일 내에서 유효한 segment만 선택
                     if seg_start >= start_time_offset + file_length or seg_end <= start_time_offset:
-                        print(f"------")
-                        print(f"start_time_offset: {start_time_offset}")
-                        print(f"file_length: {file_length}")
-                        print(F"seg_start: {seg_start}")
-                        print(F"seg_end: {seg_end}")
-                        print(f"SKIP")
-                        print(f"------")
+                        # print(f"------")
+                        # print(f"SKIP")
+                        # print(f"------")
                         continue  # 현재 파일 범위를 벗어난 segment는 무시
                     
-                    # 📌 파일 내 상대적 위치로 변환
-                    print(f"SUCCESS")
+                    # # 📌 파일 내 상대적 위치로 변환
+                    # print(f"SUCCESS")
                     
-                    print(f"file_path: {file_path}")
-                    print(F"segment: {segment}")
-                    print(f"seg_start: {seg_start}")
-                    print(f"start_time_offset: {start_time_offset}")
-                    # print(f"file_length: {file_length}")
-                    print(f"seg_end: {seg_end}")
+                    # print(f"file_path: {file_path}") # file_path: /media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0001.npy
+                    # print(F"segment: {segment}") # [0, 910]
+                    # print(f"seg_start: {seg_start}") # 0
+                    # print(f"start_time_offset: {start_time_offset}") # 0
+                    # # print(f"file_length: {file_length}")
+                    # print(f"seg_end: {seg_end}") # 14576000 (911 seconds)
+                    # 참고로 [0, 1, ..., 910] 이 valid_segments였음. (911 프레임 직전까지 --> 910.9999 초)
+                    
                     local_start = max(0, seg_start - start_time_offset)
                     local_end = min(file_length, seg_end - start_time_offset)
-                    print(f"local_start: {local_start}")
-                    print(F"local_end: {local_end}")
-                    input()
+                    #print(f"local_start: {local_start}") # 0
+                    #print(F"local_end: {local_end}") # 14576000 
+                    # input() # DEBUG
 
                     if local_end > local_start:
                         file_valid_segments.append((local_start, local_end))
                     
                 file_segment_map[file_path] = file_valid_segments  # 🔹 파일별 valid_segments 저장
                 #print(f"file_segment_map: {file_segment_map}")
+                #input()
+                # 각 파일에 유효한 오디오 샘플 구간을 담습니다. 
+                ''' (14565000 직전까지)
+                file_segment_map: {'/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0001.npy': [(0, 14576000)], 
+                '/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0002.npy': [], 
+                '/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0003.npy': [], 
+                '/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0004.npy': [], 
+                '/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0005.npy': [], 
+                '/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0006.npy': [], 
+                '/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0007.npy': [], 
+                '/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0008.npy': [], 
+                '/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0009.npy': [], 
+                '/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0010.npy': []}
+                '''
             except Exception as e:
                 #print(f"Error processing {file_path}: {e}")
                 continue
@@ -514,30 +524,61 @@ class ASPEDDataset(Dataset):
                     #print(f"segment_length: {segment_length}") # 10
 
                 except Exception as e:
-                    raise 'stop'
                     print(f"Error reading labels in {new_path}: {e}")
+                    input("Press any key to continue...")
                     continue
 
                 audio_path = os.path.join(path, 'Audio')
-                # 🚨 각 리코더별로 처리
-                for recorder in os.listdir(audio_path):
+                # print(F"audio_path: {audio_path}") # /media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio
+
+                # 각 레코더별로 처리
+                # print(f"os.listdir(audio_path): {os.listdir(audio_path)}") # ['recorder1_DR-05X-01']
+                for recorder in sorted(os.listdir(audio_path)):
+                    # print(f"recorder: {recorder}") # recorder1_DR-05X-01
                     recorder_path = os.path.join(audio_path, recorder)
+                    # print(f"recorder_path: {recorder_path}")
+                    # recorder_path: /media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01
                     
                     if not os.path.isdir(recorder_path):
                         continue  # 폴더가 아닌 경우 무시
 
                     # 리코더 ID 추출 (예: "recorder1_DR-05X-01" → "recorder1" --> "1")
                     recorder_id = recorder.split('_')[0][-1]
+                    # print(f"recorder_id: {recorder_id}") # 1
+                    
                     label_column = LABEL_HEADER.format(recorder_id, radius)
+                    # print(f"label_column: {label_column}") # recorder1_6m
 
+                    # print(f"label.columns: {labels.columns}")
+                    '''
+                    label.columns: Index(['timestamp', 'frame', 'recorder1_1m', 'recorder1_3m', 'recorder1_6m',
+                                'recorder1_9m', 'view_recorder1_1m', 'view_recorder1_3m',
+                                'view_recorder1_6m', 'view_recorder1_9m', 'busFrame'],
+                                dtype='object')
+                    '''
                     if label_column not in labels.columns:
                         print(f"Warning: {label_column} not found in labels for {recorder_path}")
                         continue
 
                     label_values = labels[label_column].values
+                    # print(f"label_values: {label_values}") # label_values: [0 0 0 ... 0 0 0] # recorder1_6m
 
                     # 🚨 개별 .npy 파일을 기준으로 valid_segments를 다시 나누기
                     file_list = sorted([os.path.join(recorder_path, x) for x in os.listdir(recorder_path) if x.endswith(AUDIO_EXT)])
+                    # print(f"file_list: {file_list}")
+                    '''
+                    file_list: ['/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0001.npy', 
+                    '/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0002.npy', 
+                    '/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0003.npy', 
+                    '/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0004.npy', 
+                    '/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0005.npy', 
+                    '/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0006.npy', 
+                    '/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0007.npy', 
+                    '/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0008.npy', 
+                    '/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0009.npy', 
+                    '/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0010.npy']
+                    '''
+
                     file_offsets = {}  # 각 파일의 오디오 오프셋 추적
                     offset = 0
 
@@ -554,44 +595,82 @@ class ASPEDDataset(Dataset):
                             file_offsets[file_path] = (offset, offset + file_length)  # 오프셋 저장
                             offset += file_length
                             
-                            print(f"offset: {offset}")
+                            # print(f"offset: {offset}")
 
                         except Exception as e:
                             print(f"Error loading {file_path}: {e}")
                             continue
-
+                    # print(f"file_offsets: {file_offsets}")
+                    '''
+                    # 230400000 samples == 14400 seconds (16kHz) == 240 minutes == 4 hours
+                    file_offsets: {'/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0001.npy': (0, 230400000), 
+                    '/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0002.npy': (230400000, 460800000), 
+                    '/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0003.npy': (460800000, 691200000), 
+                    '/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0004.npy': (691200000, 921600000), 
+                    '/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0005.npy': (921600000, 1152000000), 
+                    '/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0006.npy': (1152000000, 1382400000), 
+                    '/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0007.npy': (1382400000, 1612800000), 
+                    '/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0008.npy': (1612800000, 1843200000), 
+                    '/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0009.npy': (1843200000, 2073600000), 
+                    '/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0010.npy': (2073600000, 2304000000)}
+                    '''
+                
                     # 🚨 valid_segments를 개별 파일 기준으로 변환
                     for seg in valid_segments:
+                        # print(f"seg: {seg}") # [0, 1, ..., 910]
+                        # print(f"type(seg): {type(seg)}") # <class 'list'>
                         seg_start, seg_end = seg[0] * SR, seg[-1] * SR # sample 단위로 변경; 시작 샘플과 끝 샘플
-
-                        #print(f"seg_start: {seg_start}")
-                        #print(f"seg_end: {seg_end}")
+                        # print(f"seg_start: {seg_start}") # 0
+                        # print(f"seg_end: {seg_end}") # 14560000
+                        
+                        # print(f"file_offsets.items(): {file_offsets.items()}")
+                        '''
+                        file_offsets.items(): 
+                        dict_items([('/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0001.npy', (0, 230400000)), 
+                        ('/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0002.npy', (230400000, 460800000)), 
+                        ('/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0003.npy', (460800000, 691200000)), 
+                        ('/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0004.npy', (691200000, 921600000)), 
+                        ('/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0005.npy', (921600000, 1152000000)), 
+                        ('/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0006.npy', (1152000000, 1382400000)), 
+                        ('/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0007.npy', (1382400000, 1612800000)), 
+                        ('/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0008.npy', (1612800000, 1843200000)), 
+                        ('/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0009.npy', (1843200000, 2073600000)), 
+                        ('/media/backup_SSD/ASPED_v2_npy/Session_07262023/FifthSt_A/Audio/recorder1_DR-05X-01/0010.npy', (2073600000, 2304000000))])
+                        '''
+                        
                         for file_path, (file_start, file_end) in file_offsets.items():
-                            # print(f"file_start: {file_start}") # 0
-                            # print(f"file_end: {file_end}") # 230400000 samples --> 14400 seconds
-                            # input()
                             if seg_start >= file_end or seg_end <= file_start:
                                 continue  # 현재 파일 범위를 벗어나는 segment는 무시
 
-                            # 파일 내 상대적 프레임 계산 --> 절대적
+                            # print(f"seg_start: {seg_start}") # 0
+                            # print(f"seg_end: {seg_end}") # 14560000
+                            
+                            # 파일 내 상대적 프레임 계산
                             local_start = max(0, seg_start - file_start)
                             local_end = min(file_end - file_start, seg_end - file_start)
                             
-                            # print(f"local_start // SR: {local_start // SR}") # 0
-                            # print(f"local_end // SR: {local_end // SR}") # 494
+                            # print(f"local_start: {local_start}") # 0
+                            # print(f"local_end: {local_end}") # 14560000
 
+                            # print(f"seg[0]: {seg[0]}") # 0
+                            # print(f"seg[0] + segment_length: {seg[0]+segment_length}") # 10
                             if local_end > local_start:
                                 local_label = torch.tensor(label_values[seg[0]:seg[0] + segment_length].astype(np.float32))
-                                if local_label.numel() == 0:
+                                # print(f"local_label: {local_label}") # tensor([0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
+                                # print(f"local_label.numel(): {local_label.numel()}") # 10
+                                if local_label.numel() != 10:
                                     print(f"Warning: Empty label tensor for {file_path} and segment {seg}")
+                                    raise 'stop'
                                     continue
-
+                                #print (f"local_label.max().item(): {local_label.max()}") 
+                                #print(f"ASPEDDataset.max_val: {ASPEDDataset.max_val}") # 1 (Default; minimum)
+                                
                                 ASPEDDataset.max_val = max(local_label.max().item(), ASPEDDataset.max_val)
+                                #print(F'ASPEDDataset.max_val: {ASPEDDataset.max_val}') # ASPEDDataset.meax_val: 1.0
 
-                                # print(f"(file_start)//230400000 + local_start//SR: {(file_start)//230400000 + local_start//SR}")
-                                # input()
                                 # 🔹 파일이 아닌, 해당 파일이 있는 폴더를 전달
                                 # __init__ 
+                                # print(f"dataset: {dataset}") # initial value is []
                                 dataset.append(ASPEDDataset(
                                     os.path.dirname(file_path),  # 🔹 폴더 경로를 전달
                                     local_label,
@@ -603,6 +682,11 @@ class ASPEDDataset(Dataset):
                                 # dataset.append(ASPEDDataset(
                                 #     file_path, local_label, segment_length=segment_length, n_classes=n_classes, valid_segments=[[local_start // SR, local_end // SR]]
                                 # ))
+                                # print(f"dataset: {dataset}") 
+                                # dataset: [<models.data_utils.dataset.ASPEDDataset object at 0x7c5e7a47c2b0>]
+                                # raise 'stop'
+                            # print(F'ASPEDDataset.max_val: {ASPEDDataset.max_val}')
+                            #raise 'stop'
 
         # 🚨 dataset이 비어 있는 경우 예외 처리
         if not dataset:
@@ -624,6 +708,10 @@ class ASPEDDataset(Dataset):
                 print(f"⚠️  Warning: Dataset {i} does not have a __len__() method!")
                 
         c_dataset = ConcatDataset(dataset)
+        print(f"c_dataset[0]: {c_dataset[0]}")
+        print(f"c_dataset[1]: {c_dataset[1]}")
+        
+        raise 'STOP'
 
         # 🚨 Transform 적용
         if transform == 'vggish':
