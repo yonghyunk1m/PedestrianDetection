@@ -139,12 +139,13 @@ class ASPEDDataset(Dataset):
                 #input()
                 try:
                     # /media/backup_SSD/ASPED_v2_npy_labels_with_bus/Session_07262023/FifthSt_A/0001.csv
-                    
-                    label_files = list(filter(lambda x: x.endswith(LABELS_SUFFIX[-3:]), [os.path.join(os.path.join(path.replace('ASPED_v2_npy', 'ASPED_v2_npy_labels_with_bus')), x) for x in os.listdir(os.path.join(path.replace('ASPED_v2_npy', 'ASPED_v2_npy_labels_with_bus')))]))
+                    if path.split('/')[-3] == 'ASPED_v2_npy': # ASPED v_b
+                        label_files = list(filter(lambda x: x.endswith(LABELS_SUFFIX[-3:]), [os.path.join(os.path.join(path.replace('ASPED_v2_npy', 'ASPED_v2_npy_labels_with_bus')), x) for x in os.listdir(os.path.join(path.replace('ASPED_v2_npy', 'ASPED_v2_npy_labels_with_bus')))]))
+                    else: # ASPED v_a
+                        label_files = list(filter(lambda x: x.endswith(LABELS_SUFFIX[-3:]) and not
+                                        'processed' in x, [os.path.join(path,'Labels', x) for x in os.listdir(os.path.join(path, 'Labels'))]))
                     #print(f"label_files: {label_files}") # label_files: ['/media/backup_SSD/ASPED_v2_npy_labels_with_bus/Session_07262023/FifthSt_C/0008.csv',
-                    # Original (w/ BusFrame)
-                    #label_files = list(filter(lambda x: x.endswith(LABELS_SUFFIX[-3:]) and not
-                                        #'processed' in x, [os.path.join(path,'Labels', x) for x in os.listdir(os.path.join(path, 'Labels'))]))
+
                     labels = [pd.read_csv(x) for x in sorted(label_files)]
                     labels = pd.concat(labels, axis=0)
                 except Exception as e:
